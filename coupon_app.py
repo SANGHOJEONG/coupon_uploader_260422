@@ -16,7 +16,7 @@ st.markdown('''
     /* 다운로드 버튼: Ver2 수준의 크기를 유지하면서 간격만 좁힘 */
     .stDownloadButton>button { 
         width: 100%; 
-        border-radius: 5px; 
+        border-radius: 3px; 
         background-color: #007bff; 
         color: white;
         height: 3em; /* 버튼 높이 고정 */
