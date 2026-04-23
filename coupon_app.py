@@ -5,13 +5,14 @@ import io
 import os
 
 # 페이지 기본 설정
-st.set_page_config(page_title="롯데온 Pro 쿠폰 업로드 지원(V4)", layout="wide")
+st.set_page_config(page_title="롯데온 Pro 쿠폰 업로드 지원(V5)", layout="wide")
 
 # CSS를 활용한 디자인 요소 가미 (카드 형태 스타일링)
 st.markdown('''
     <style>
     .main { background-color: #f8f9fa; }
     .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #ff4b4b; color: white; }
+    /* 다운로드 버튼이 너무 넓게 퍼지지 않도록 처리 (최대 너비 제한) */
     .stDownloadButton>button { width: 100%; border-radius: 5px; background-color: #007bff; color: white; }
     div[data-testid="stExpander"] { border: 1px solid #e0e0e0; border-radius: 10px; background-color: white; }
     </style>
@@ -130,7 +131,8 @@ if extract_btn and df_raw is not None:
             '행사시작일': start_str, '행사종료일': end_str,
             '할인유형': discount_type.split(' ')[0], '할인액': discount_value,
             '거래처분담율': vendor_share, '제휴사분담율': partner_share,
-            '사용요일': day_setting, '시작시간': '0000', '종료시간': '2359', '요일/시간 할인율': 0
+            '사용요일': day_setting, '시작시간': '0000', '종료시간': '2359', 
+            '요일/시간 할인율': ""  # <--- 요청하신 빈칸 처리 부분
         })
 
         # 5,000건 단위 다운로드 메뉴
@@ -138,7 +140,10 @@ if extract_btn and df_raw is not None:
         st.info(f"파일 안정성을 위해 {CHUNK_SIZE:,}건 단위로 분할된 다운로드 버튼을 클릭하세요.")
         
         num_chunks = (total_count // CHUNK_SIZE) + 1
-        cols = st.columns(4) # 4열로 버튼 배치
+        
+        # 버튼 사이의 이격 거리를 줄이기 위해 컬럼 개수를 늘리고 간격을 'small'로 설정합니다.
+        # 기존 4열 배치에서 7열 배치로 변경하여 버튼들이 화면 좌측으로 더 조밀하게 모이게 합니다.
+        cols = st.columns(7, gap="small") 
         
         for idx in range(num_chunks):
             start_idx = idx * CHUNK_SIZE
@@ -151,7 +156,7 @@ if extract_btn and df_raw is not None:
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 chunk_df.to_excel(writer, index=False)
             
-            with cols[idx % 4]:
+            with cols[idx % 7]:
                 st.download_button(
                     label=f"Part {idx+1} ({start_idx+1:,}~{end_idx:,})",
                     data=output.getvalue(),
