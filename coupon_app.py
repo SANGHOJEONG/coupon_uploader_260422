@@ -24,7 +24,7 @@ html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
 .stApp {
-    background-color: #f7f6f4;
+    background-color: #fcfbf9;
 }
 .main .block-container {
     padding: 2.2rem 3rem 4rem 3rem;
@@ -97,7 +97,7 @@ html, body, [class*="css"] {
     border: 1px solid rgba(184,150,90,0.6);
     color: #b8965a;
     padding: 6px 16px;
-    border-radius: 2px;
+    border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 2px;
@@ -122,11 +122,11 @@ div[data-testid="stAlert"] {
 ══════════════════════════════════════ */
 .ld-section {
     background: white;
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 28px 32px;
     margin-bottom: 16px;
     border: 1px solid #e8e4de;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 .ld-section-title {
     font-family: 'Noto Serif KR', serif;
@@ -147,7 +147,7 @@ div[data-testid="stAlert"] {
     width: 3px;
     height: 16px;
     background: linear-gradient(180deg, #b8965a, #d4b47a);
-    border-radius: 2px;
+    border-radius: 4px;
     flex-shrink: 0;
 }
 
@@ -198,7 +198,7 @@ div[data-testid="stAlert"] {
 ══════════════════════════════════════ */
 .stButton > button {
     width: 100%;
-    border-radius: 3px;
+    border-radius: 6px;
     height: 3.4em;
     background: #1a1a2e !important;
     color: white !important;
@@ -226,7 +226,7 @@ div[data-testid="stAlert"] {
 ══════════════════════════════════════ */
 .stDownloadButton > button {
     width: 100%;
-    border-radius: 3px;
+    border-radius: 6px;
     background: white !important;
     color: #1a1a2e !important;
     height: 3em;
@@ -374,7 +374,7 @@ div[data-testid="stExpander"] summary {
     background: white;
     border: 1px solid #e8e4de;
     border-top: 2px solid #b8965a;
-    border-radius: 3px;
+    border-radius: 6px;
     padding: 20px 18px;
     text-align: center;
     box-shadow: 0 1px 6px rgba(0,0,0,0.05);
@@ -426,7 +426,7 @@ div[data-testid="stExpander"] summary {
     background: #1a1a2e;
     color: #b8965a;
     padding: 3px 12px;
-    border-radius: 2px;
+    border-radius: 4px;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 1px;
@@ -487,7 +487,7 @@ with st.sidebar:
     st.markdown("""
     <div class="sb-logo">
         <div class="sb-logo-main">🏬 롯데백화점몰</div>
-        <div class="sb-logo-sub">Coupon Upload Pro</div>
+        <div class="sb-logo-sub">Premium Coupon Upload</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -499,10 +499,10 @@ with st.sidebar:
         sel_brand    = st.multiselect("브랜드명",           sorted(df_raw['브랜드명'].unique()))
 
         st.markdown("---")
-        st.markdown('<p class="sb-section-label">수익성 필터 (마진율 %)</p>', unsafe_allow_html=True)
+        st.markdown('<p class="sb-section-label">마진율 필터</p>', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
-        with c1: sel_min_margin = st.number_input("최소", 0, 100, 10)
-        with c2: sel_max_margin = st.number_input("최대", 0, 100, 40)
+        with c1: sel_min_margin = st.number_input("이상", min_value=0, max_value=100, value=None)
+        with c2: sel_max_margin = st.number_input("이하", min_value=0, max_value=100, value=None)
 
         st.markdown("---")
         st.markdown('<p class="sb-section-label">상품 상태</p>', unsafe_allow_html=True)
@@ -572,7 +572,12 @@ if extract_btn:
         if sel_md:       df_f = df_f[df_f['백화점MD'].isin(sel_md)]
         if sel_brand:    df_f = df_f[df_f['브랜드명'].isin(sel_brand)]
         if status_option != "전체": df_f = df_f[df_f['상품상태'] == status_option]
-        df_f = df_f[(df_f['마진율'] >= sel_min_margin) & (df_f['마진율'] <= sel_max_margin)]
+                
+        if sel_min_margin is not None:
+            df_f = df_f[df_f['마진율'] >= sel_min_margin]
+        if sel_max_margin is not None:
+            df_f = df_f[df_f['마진율'] <= sel_max_margin]
+
 
         total_count = len(df_f)
         CHUNK_SIZE  = 5000
@@ -656,6 +661,6 @@ if extract_btn:
 # ─── 푸터 ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="ld-footer">
-    <span>Lotte Department Store Mall</span> &nbsp;·&nbsp; Coupon Upload Pro &nbsp;·&nbsp; Internal Use Only
+    <span>Lotte Department Store Mall</span> &nbsp;·&nbsp; Premium Coupon Upload &nbsp;·&nbsp; Internal Use Only
 </div>
 """, unsafe_allow_html=True)
