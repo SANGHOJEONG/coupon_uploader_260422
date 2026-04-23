@@ -448,6 +448,22 @@ div[data-testid="stExpander"] summary {
 .ld-footer span {
     color: #b8965a;
 }
+
+[data-testid="stSidebar"] .stNumberInput input {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+/* Ensure +/- buttons in sidebar are visible */
+[data-testid="stSidebar"] button[title="Step up"],
+[data-testid="stSidebar"] button[title="Step down"] {
+    color: #ffffff !important;
+    background: transparent !important;
+}
+[data-testid="stSidebar"] button[title="Step up"] svg,
+[data-testid="stSidebar"] button[title="Step down"] svg {
+    fill: #ffffff !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -501,8 +517,8 @@ with st.sidebar:
         st.markdown("---")
         st.markdown('<p class="sb-section-label">마진율 필터</p>', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
-        with c1: sel_min_margin = st.number_input("이상", min_value=0, max_value=100, value=None)
-        with c2: sel_max_margin = st.number_input("이하", min_value=0, max_value=100, value=None)
+        with c1: sel_min_margin = st.number_input("이상", min_value=0, max_value=100, value=None, step=1)
+        with c2: sel_max_margin = st.number_input("이하", min_value=0, max_value=100, value=None, step=1)
 
         st.markdown("---")
         st.markdown('<p class="sb-section-label">상품 상태</p>', unsafe_allow_html=True)
