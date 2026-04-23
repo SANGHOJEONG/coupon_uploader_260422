@@ -476,33 +476,49 @@ div[data-testid="stExpander"] summary {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 4px !important;
-    padding: 2px 4px !important; /* 좌우 패딩을 확 줄여서 숫자가 들어갈 공간 확보 */
-    font-size: 0.9rem !important; /* 글자 크기도 적당히 조정 */
-    letter-spacing: -0.5px !important; /* 자간 축소 */
+    padding: 2px 4px !important;
+    font-size: 0.9rem !important;
+    letter-spacing: -0.5px !important;
 }
 
 [data-testid="stSidebar"] div[data-baseweb="input"],
 [data-testid="stSidebar"] div[data-baseweb="base-input"] {
     background-color: transparent !important;
-    padding: 0 !important; /* 불필요한 부모 요소 여백 제거 */
+    padding: 0 !important;
 }
 
-/* 숫자 조절(+, -) 버튼 강제 상시 노출 및 스타일 */
-[data-testid="stSidebar"] button[kind="stepUp"],
-[data-testid="stSidebar"] button[kind="stepDown"],
-[data-testid="stSidebar"] div[data-baseweb="input"] button {
-    background-color: rgba(255, 255, 255, 0.15) !important;
+/* X (Clear) 버튼 숨기기 */
+[data-testid="stSidebar"] button[aria-label="Clear input"],
+[data-testid="stSidebar"] button[aria-label="Clear value"],
+[data-testid="stSidebar"] div[data-baseweb="input"] > div > button {
+    display: none !important;
+}
+
+/* 숫자 조절(+, -) 버튼 상시 노출 최적화 (Streamlit 내부 클래스 직접 타겟팅) */
+[data-testid="stSidebar"] div[data-testid="InputInstructions"] {
+    display: none !important; /* 내부 안내 문구 숨김 */
+}
+
+/* step-up, step-down 버튼을 항상 강제 표시 */
+[data-testid="stSidebar"] button[data-testid="step-up"],
+[data-testid="stSidebar"] button[data-testid="step-down"],
+[data-testid="stSidebar"] button.step-up,
+[data-testid="stSidebar"] button.step-down {
+    background-color: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
-    opacity: 1 !important; /* 마우스 오버 전에도 항상 보이도록 설정 */
+    opacity: 1 !important; 
     visibility: visible !important;
     display: flex !important;
+    transform: none !important;
 }
-[data-testid="stSidebar"] div[data-baseweb="input"] button svg {
+
+[data-testid="stSidebar"] button[data-testid="step-up"] svg,
+[data-testid="stSidebar"] button[data-testid="step-down"] svg {
     fill: #ffffff !important;
     color: #ffffff !important;
     opacity: 1 !important;
+    visibility: visible !important;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
