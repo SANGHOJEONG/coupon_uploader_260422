@@ -3,29 +3,31 @@ import pandas as pd
 from datetime import datetime
 import io
 import os
-import re
 
 # 페이지 기본 설정
-st.set_page_config(page_title="롯데온 Pro 쿠폰 업로드 지원(V6)", layout="wide")
+st.set_page_config(page_title="롯데온 Pro 쿠폰 업로드 지원(Final)", layout="wide")
 
-# CSS를 활용한 디자인 요소 가미
+# CSS를 활용한 디자인 요소 (버튼 크기 유지 및 간격 축소 최적화)
 st.markdown('''
     <style>
     .main { background-color: #f8f9fa; }
     .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #ff4b4b; color: white; }
-    /* 다운로드 버튼 스타일 및 간격 미세 조정 */
+    
+    /* 다운로드 버튼: Ver2 수준의 크기를 유지하면서 간격만 좁힘 */
     .stDownloadButton>button { 
         width: 100%; 
         border-radius: 5px; 
         background-color: #007bff; 
         color: white;
-        padding: 0.25rem 0.5rem;
+        height: 3em; /* 버튼 높이 고정 */
     }
-    /* 컬럼 간격을 강제로 더 좁히는 CSS */
+    
+    /* 컬럼 간의 불필요한 좌우 여백(Padding)을 최소화하여 간격 축소 */
     [data-testid="column"] {
-        padding-left: 1px !important;
-        padding-right: 1px !important;
+        padding-left: 5px !important;
+        padding-right: 5px !important;
     }
+    
     div[data-testid="stExpander"] { border: 1px solid #e0e0e0; border-radius: 10px; background-color: white; }
     </style>
     ''', unsafe_allow_html=True)
@@ -92,15 +94,14 @@ with st.container():
     with r2_c2:
         partner_share = st.number_input("제휴사 분담율 (%)", 0, 100, 0)
     with r2_c3:
-        day_setting = st.text_input("요일 설정", value="OOOOOOO", help="월화수목금토일 순서로 O(적용), X(미적용) 입력")
+        day_setting_input = st.text_input("요일 설정", value="OOOOOOO")
         st.caption("💡 금토일만 쿠폰을 붙이고 싶다면 XXXXOOO으로 설정")
         
-        # 요일 설정 유효성 검사 로직 추가 (영문 O, X 및 대소문자 허용)
-        day_setting = day_setting.upper()
-        is_day_valid = len(day_setting) == 7 and all(char in "OX" for char in day_setting)
-        
+        # 유효성 검사
+        day_setting = day_setting_input.upper()
+        is_day_valid = len(day_setting) == 7 and all(c in "OX" for c in day_setting)
         if not is_day_valid:
-            st.error("⚠️ 요일 설정은 'O'와 'X'만 사용하여 반드시 7자리로 입력해주세요.")
+            st.error("⚠️ 'O'와 'X'만 사용하여 7자리를 입력해주세요.")
 
     st.markdown("---")
     row2_col1, row2_col2 = st.columns(2)
@@ -123,14 +124,13 @@ with st.container():
 st.markdown("###")
 extract_btn = st.button("🔍 엑셀 파일 추출 및 다운로드 메뉴 생성")
 
-# 버튼 클릭 시 요일 설정이 유효한 경우에만 실행
 if extract_btn:
     if not is_day_valid:
-        st.warning("요일 설정을 올바르게 입력해야 엑셀 추출이 가능합니다.")
+        st.warning("요일 설정을 올바르게 입력해야 추출이 가능합니다.")
     elif df_raw is None:
-        st.error("데이터 파일을 로드할 수 없습니다.")
+        st.error("데이터 파일을 찾을 수 없습니다.")
     else:
-        # 필터링 연산
+        # 필터링
         df_f = df_raw.copy()
         if sel_store: df_f = df_f[df_f['상위거래처'].isin(sel_store)]
         if sel_md_group: df_f = df_f[df_f['상위MD상품군명'].isin(sel_md_group)]
@@ -140,7 +140,7 @@ if extract_btn:
         df_f = df_f[(df_f['마진율'] >= sel_min_margin) & (df_f['마진율'] <= sel_max_margin)]
 
         total_count = len(df_f)
-        st.success(f"✅ 조건에 맞는 상품 총 **{total_count:,}**개가 추출되었습니다.")
+        st.success(f"✅ 총 **{total_count:,}**개의 상품이 추출되었습니다.")
 
         if total_count > 0:
             start_str = datetime.combine(start_dt, start_tm).strftime('%Y%m%d%H%M')
@@ -157,13 +157,12 @@ if extract_btn:
             })
 
             CHUNK_SIZE = 5000
-            st.info(f"파일 안정성을 위해 {CHUNK_SIZE:,}건 단위로 분할된 다운로드 버튼을 클릭하세요.")
+            st.info(f"{CHUNK_SIZE:,}건 단위로 분할된 파일을 다운로드하세요.")
             
             num_chunks = (total_count // CHUNK_SIZE) + 1
             
-            # 버튼 간 이격 거리를 최소화하기 위해 10열 배치 및 CSS 패딩 조정
-            # st.columns의 gap을 'small'로 하고 CSS로 좌우 여백을 더 줄임
-            cols = st.columns(10, gap="small") 
+            # Ver2의 버튼 크기를 위해 4열 배치를 유지하면서, CSS로 간격만 좁힙니다.
+            cols = st.columns(4) 
             
             for idx in range(num_chunks):
                 start_idx = idx * CHUNK_SIZE
@@ -171,18 +170,17 @@ if extract_btn:
                 if start_idx >= total_count: break
                 
                 chunk_df = df_upload.iloc[start_idx:end_idx]
-                
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
                     chunk_df.to_excel(writer, index=False)
                 
-                with cols[idx % 10]:
+                with cols[idx % 4]:
                     st.download_button(
-                        label=f"P{idx+1}", # 버튼 크기를 줄이기 위해 라벨을 간소화 (Part -> P)
+                        label=f"Part {idx+1} ({start_idx+1:,}~{end_idx:,})",
                         data=output.getvalue(),
                         file_name=f"coupon_part{idx+1}_{datetime.now().strftime('%Y%m%d')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key=f"btn_{idx}"
                     )
         else:
-            st.warning("추출된 데이터가 없습니다. 필터 조건을 조정해 주세요.")
+            st.warning("추출된 데이터가 없습니다.")
