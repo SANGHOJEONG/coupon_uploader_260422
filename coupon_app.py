@@ -58,40 +58,52 @@ else:
     st.sidebar.warning("`product_dummy_data_30k.csv` 파일을 찾을 수 없습니다.")
 
 # -----------------------------------------------------------------------------
-# 3. Main Dashboard: 디자인 개선 (그룹화)
+# 3. Main Dashboard
 # -----------------------------------------------------------------------------
 with st.container():
     st.subheader("⚙️ 쿠폰 발행 정책 및 기간 설정")
-    
-    # 1열: 정책 및 분담율
+
+    # [수정3] 1행: 기본 정책 3개를 가로 한 줄로 묶음
+    st.markdown("**📍 기본 정책**")
     row1_col1, row1_col2, row1_col3 = st.columns(3)
     with row1_col1:
-        st.markdown("**📍 기본 정책**")
         store_range = st.selectbox("매장범위", ["A (전채널)", "M (본매장)", "O (외부매장)"])
-        discount_type = st.selectbox("할인유형", ["10 (정률)", "30 (정액)"])
-        discount_value = st.number_input("할인액/율", min_value=0, value=10)
-    
     with row1_col2:
+        discount_type = st.selectbox("할인유형", ["10 (정률)", "30 (정액)"])
+    with row1_col3:
+        discount_value = st.number_input("할인액/율", min_value=0, value=10)
+
+    st.markdown("---")
+
+    # [수정3] 2행: 비용 분담 + 요일 설정을 가로 한 줄로 묶음
+    row2_col1, row2_col2 = st.columns(2)
+
+    with row2_col1:
         st.markdown("**💰 비용 분담**")
         vendor_share = st.number_input("거래처 분담율 (%)", 0, 100, 0)
         partner_share = st.number_input("제휴사 분담율 (%)", 0, 100, 0)
-        
-    with row1_col3:
-        st.markdown("**📦 기타 설정**")
-        st.text_input("요일 설정 (고정)", value="OOOOOOO", disabled=True)
-        st.text_input("시간 설정 (고정)", value="0000-2359", disabled=True)
 
-    # 2열: 기간 설정 그룹화 (시각적 묶음)
+    with row2_col2:
+        st.markdown("**📅 요일 설정**")
+        # [수정1] 요일 설정: 기본값 유지하되 편집 가능하게 하고 안내 문구 추가
+        day_setting = st.text_input(
+            "요일 설정 (월화수목금토일 순서, O=적용 / X=미적용)",
+            value="OOOOOOO"
+        )
+        st.caption("💡 금토일만 쿠폰을 붙이고 싶다면 **XXXXOOO** 으로 설정하세요.")
+        # [수정2] '시간 설정(고정)' 항목 삭제 — 아래 행사 시간 설정에서 동일 정보 입력
+
+    # 기간 설정 그룹화
     st.markdown("---")
-    row2_col1, row2_col2 = st.columns(2)
+    row3_col1, row3_col2 = st.columns(2)
     
-    with row2_col1:
+    with row3_col1:
         with st.expander("📅 행사 날짜 설정 (시작일/종료일)", expanded=True):
             d_c1, d_c2 = st.columns(2)
             start_dt = d_c1.date_input("시작일", datetime.now())
             end_dt = d_c2.date_input("종료일", datetime.now())
             
-    with row2_col2:
+    with row3_col2:
         with st.expander("⏰ 행사 시간 설정 (시작시간/종료시간)", expanded=True):
             t_c1, t_c2 = st.columns(2)
             start_tm = t_c1.time_input("시작 시간", datetime.strptime("00:00", "%H:%M").time())
@@ -104,7 +116,6 @@ st.markdown("###")
 extract_btn = st.button("🔍 엑셀 파일 추출 및 다운로드 메뉴 생성")
 
 if extract_btn and df_raw is not None:
-    # 필터링 연산을 여기서 한 번만 수행 (리소스 절약)
     df_f = df_raw.copy()
     if sel_store: df_f = df_f[df_f['상위거래처'].isin(sel_store)]
     if sel_md_group: df_f = df_f[df_f['상위MD상품군명'].isin(sel_md_group)]
@@ -117,25 +128,30 @@ if extract_btn and df_raw is not None:
     st.success(f"✅ 조건에 맞는 상품 총 **{total_count:,}**개가 추출되었습니다.")
 
     if total_count > 0:
-        # 데이터프레임 생성
         start_str = datetime.combine(start_dt, start_tm).strftime('%Y%m%d%H%M')
         end_str = datetime.combine(end_dt, end_tm).strftime('%Y%m%d%H%M')
-        
+
+        # 시간 설정: 행사 시간 설정에서 입력받은 값 사용
+        start_time_str = start_tm.strftime('%H%M')
+        end_time_str = end_tm.strftime('%H%M')
+
         df_upload = pd.DataFrame({
             '상품번호': df_f['상품번호'],
             '매장범위': store_range[0],
             '행사시작일': start_str, '행사종료일': end_str,
             '할인유형': discount_type.split(' ')[0], '할인액': discount_value,
             '거래처분담율': vendor_share, '제휴사분담율': partner_share,
-            '사용요일': 'OOOOOOO', '시작시간': '0000', '종료시간': '2359', '요일/시간 할인율': 0
+            '사용요일': day_setting,  # [수정1] 사용자가 입력한 요일 설정 반영
+            '시작시간': start_time_str,
+            '종료시간': end_time_str,
+            '요일/시간 할인율': 0
         })
 
-        # 5,000건 단위 다운로드 메뉴
         CHUNK_SIZE = 5000
         st.info(f"파일 안정성을 위해 {CHUNK_SIZE:,}건 단위로 분할된 다운로드 버튼을 클릭하세요.")
         
         num_chunks = (total_count // CHUNK_SIZE) + 1
-        cols = st.columns(4) # 4열로 버튼 배치
+        cols = st.columns(4)
         
         for idx in range(num_chunks):
             start_idx = idx * CHUNK_SIZE
