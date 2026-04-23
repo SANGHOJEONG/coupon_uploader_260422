@@ -464,6 +464,45 @@ div[data-testid="stExpander"] summary {
     fill: #ffffff !important;
 }
 
+
+
+/* 강력한 사이드바 인풋(텍스트, 숫자) 색상 강제 지정 및 넓이 확보 */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] input[type="number"],
+[data-testid="stSidebar"] input[type="text"] {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 4px !important;
+    padding: 2px 4px !important; /* 좌우 패딩을 확 줄여서 숫자가 들어갈 공간 확보 */
+    font-size: 0.9rem !important; /* 글자 크기도 적당히 조정 */
+    letter-spacing: -0.5px !important; /* 자간 축소 */
+}
+
+[data-testid="stSidebar"] div[data-baseweb="input"],
+[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+    background-color: transparent !important;
+    padding: 0 !important; /* 불필요한 부모 요소 여백 제거 */
+}
+
+/* 숫자 조절(+, -) 버튼 강제 상시 노출 및 스타일 */
+[data-testid="stSidebar"] button[kind="stepUp"],
+[data-testid="stSidebar"] button[kind="stepDown"],
+[data-testid="stSidebar"] div[data-baseweb="input"] button {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    opacity: 1 !important; /* 마우스 오버 전에도 항상 보이도록 설정 */
+    visibility: visible !important;
+    display: flex !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="input"] button svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
