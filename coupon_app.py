@@ -464,6 +464,36 @@ div[data-testid="stExpander"] summary {
     fill: #ffffff !important;
 }
 
+
+/* 강력한 사이드바 인풋(텍스트, 숫자) 색상 강제 지정 */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] input[type="number"],
+[data-testid="stSidebar"] input[type="text"] {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 4px !important;
+}
+
+[data-testid="stSidebar"] div[data-baseweb="input"],
+[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+    background-color: transparent !important;
+}
+
+/* 숫자 조절(+, -) 버튼 강제 노출 */
+[data-testid="stSidebar"] button[kind="stepUp"],
+[data-testid="stSidebar"] button[kind="stepDown"],
+[data-testid="stSidebar"] div[data-baseweb="input"] button {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="input"] button svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
