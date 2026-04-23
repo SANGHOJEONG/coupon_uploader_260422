@@ -470,14 +470,38 @@ div[data-testid="stExpander"] summary {
    사이드바 마진율 필터: 입력 필드 & 버튼 통합 스타일
 ══════════════════════════════════════ */
 
-/* [수정1] 숫자 입력 필드 배경색 통일 — 버튼 영역과 동일하게 */
-[data-testid="stSidebar"] input,
+/* [수정1] 배경색 완전 통일
+   - number_input 전체 래퍼(stNumberInput > div)를 단일 배경으로 처리
+   - 내부 input 자체는 배경 투명으로 두어 래퍼 색이 그대로 보이게 함 */
+[data-testid="stSidebar"] .stNumberInput > div {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="input"],
+[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
 [data-testid="stSidebar"] input[type="number"],
+[data-testid="stSidebar"] .stNumberInput input {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    background-color: transparent !important;  /* 래퍼 배경이 보이도록 투명 */
+    border: none !important;
+    padding: 2px 6px !important;
+    font-size: 0.9rem !important;
+    letter-spacing: -0.5px !important;
+}
+/* 텍스트 입력 필드는 별도 스타일 유지 */
 [data-testid="stSidebar"] input[type="text"] {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     caret-color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.12) !important; /* 버튼 배경과 동일한 값 */
+    background-color: rgba(255, 255, 255, 0.12) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 4px !important;
     padding: 2px 4px !important;
@@ -485,49 +509,32 @@ div[data-testid="stExpander"] summary {
     letter-spacing: -0.5px !important;
 }
 
-/* [수정1] 입력 컨테이너(baseweb) 배경도 동일하게 통일 */
-[data-testid="stSidebar"] div[data-baseweb="input"],
-[data-testid="stSidebar"] div[data-baseweb="base-input"] {
-    background-color: rgba(255, 255, 255, 0.12) !important; /* 필드 배경과 동일 */
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 4px !important;
-    padding: 0 !important;
-}
-
-/* [수정2] +/- 버튼 항상 표시 — hover 없이도 처음부터 보이도록 */
-[data-testid="stSidebar"] button[kind="stepUp"],
-[data-testid="stSidebar"] button[kind="stepDown"],
-[data-testid="stSidebar"] div[data-baseweb="input"] button {
-    background-color: rgba(255, 255, 255, 0.12) !important; /* 필드 배경과 동일 */
+/* [수정2] +/- 버튼 항상 표시 — hover 전에도 처음부터 보이도록
+   pointer-events: auto 명시로 클릭 막힘 방지 */
+[data-testid="stSidebar"] .stNumberInput button {
+    background-color: rgba(255, 255, 255, 0.18) !important;
     color: #ffffff !important;
     opacity: 1 !important;
     visibility: visible !important;
     display: flex !important;
+    pointer-events: auto !important;
     border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+    cursor: pointer !important;
 }
-[data-testid="stSidebar"] div[data-baseweb="input"] button svg {
+[data-testid="stSidebar"] .stNumberInput button svg {
     fill: #ffffff !important;
     color: #ffffff !important;
     opacity: 1 !important;
+    pointer-events: none !important;
 }
-[data-testid="stSidebar"] div[data-baseweb="input"] button:hover {
-    background-color: rgba(184, 150, 90, 0.4) !important; /* hover 시 골드 강조 */
+[data-testid="stSidebar"] .stNumberInput button:hover {
+    background-color: rgba(184, 150, 90, 0.45) !important;
 }
 
-/* [수정3] X(clear) 버튼 완전히 숨김 */
-[data-testid="stSidebar"] input[type="number"]::-webkit-inner-spin-button,
-[data-testid="stSidebar"] input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-}
-[data-testid="stSidebar"] button[aria-label="Clear value"],
-[data-testid="stSidebar"] [data-testid="stNumberInputClearButton"],
-[data-testid="stSidebar"] div[data-baseweb="input"] button[title="clear"],
-[data-testid="stSidebar"] div[data-baseweb="input"] button[aria-label*="clear" i],
-[data-testid="stSidebar"] div[data-baseweb="input"] button[aria-label*="삭제" i] {
+/* [수정3] X(clear) 버튼만 정확히 숨김
+   Streamlit이 렌더링하는 data-testid 기반으로만 타겟 — +/- 버튼에 영향 없음 */
+[data-testid="stSidebar"] [data-testid="stNumberInputClearButton"] {
     display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    overflow: hidden !important;
 }
 
 </style>
