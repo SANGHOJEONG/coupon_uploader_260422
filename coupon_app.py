@@ -318,6 +318,27 @@ div[data-testid="stExpander"] summary {
     border-radius: 3px !important;
     color: white !important;
 }
+/* 멀티셀렉트 키보드 검색 입력 글자 흰색으로 명시 */
+[data-testid="stSidebar"] .stMultiSelect input,
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="input"] input,
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="select"] input {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+}
+/* 드롭다운 옵션 목록: 어두운 배경에 흰 글자 */
+[data-testid="stSidebar"] [data-baseweb="popover"] ul,
+[data-testid="stSidebar"] [data-baseweb="menu"] {
+    background: #2a2a42 !important;
+}
+[data-testid="stSidebar"] [data-baseweb="popover"] li,
+[data-testid="stSidebar"] [data-baseweb="menu"] li {
+    color: rgba(255,255,255,0.88) !important;
+}
+[data-testid="stSidebar"] [data-baseweb="popover"] li:hover,
+[data-testid="stSidebar"] [data-baseweb="menu"] li:hover {
+    background: rgba(184,150,90,0.25) !important;
+}
 [data-testid="stSidebar"] hr {
     border-color: rgba(255,255,255,0.1) !important;
 }
