@@ -640,16 +640,34 @@ with col_time:
         end_tm   = t2.time_input("종료 시간", datetime.strptime("23:59", "%H:%M").time())
 st.markdown('</div>', unsafe_allow_html=True)
 
+# ─── session_state 초기화 ─────────────────────────────────────────────────────
+if 'result_ready' not in st.session_state:
+    st.session_state['result_ready'] = False
+if 'chunks_upload' not in st.session_state:
+    st.session_state['chunks_upload'] = []
+if 'chunks_ref' not in st.session_state:
+    st.session_state['chunks_ref'] = []
+if 'total_count' not in st.session_state:
+    st.session_state['total_count'] = 0
+if 'num_chunks' not in st.session_state:
+    st.session_state['num_chunks'] = 0
+if 'date_label' not in st.session_state:
+    st.session_state['date_label'] = ''
+
+CHUNK_SIZE = 5000
+
 # ─── CTA 버튼 ─────────────────────────────────────────────────────────────────
 st.markdown("<div style='margin: 28px 0 8px 0;'></div>", unsafe_allow_html=True)
 extract_btn = st.button("엑셀 파일 추출 및 다운로드 메뉴 생성")
 
-# ─── 실행 로직 ────────────────────────────────────────────────────────────────
+# ─── 추출 실행 (버튼 클릭 시에만) ────────────────────────────────────────────
 if extract_btn:
     if not is_day_valid:
         st.warning("요일 설정을 올바르게 입력한 후 다시 시도해주세요.")
+        st.session_state['result_ready'] = False
     elif df_raw is None:
         st.error("데이터 파일을 찾을 수 없습니다. CSV 파일을 확인해주세요.")
+        st.session_state['result_ready'] = False
     else:
         df_f = df_raw.copy()
         if sel_store:        df_f = df_f[df_f['점포'].isin(sel_store)]
@@ -657,44 +675,16 @@ if extract_btn:
         if sel_sub_md_group: df_f = df_f[df_f['하위MD상품군명'].isin(sel_sub_md_group)]
         if sel_md:           df_f = df_f[df_f['담당MD_명'].isin(sel_md)]
         if sel_brand:        df_f = df_f[df_f['브랜드명'].isin(sel_brand)]
-                
+
         if sel_min_margin is not None:
             df_f = df_f[df_f['마진율'] >= sel_min_margin]
         if sel_max_margin is not None:
             df_f = df_f[df_f['마진율'] <= sel_max_margin]
 
-
         total_count = len(df_f)
-        CHUNK_SIZE  = 5000
         num_chunks  = max(1, (total_count + CHUNK_SIZE - 1) // CHUNK_SIZE)
 
-        # ── 통계 카드 ──
-        st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
-        s1, s2, s3 = st.columns(3)
-        with s1:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div class="num">{total_count:,}<span class="unit">건</span></div>
-                <div class="label">추출된 상품 수</div>
-            </div>""", unsafe_allow_html=True)
-        with s2:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div class="num">{num_chunks}<span class="unit">개</span></div>
-                <div class="label">분할 파일 수</div>
-            </div>""", unsafe_allow_html=True)
-        with s3:
-            st.markdown(f"""
-            <div class="stat-card">
-                <div class="num">{CHUNK_SIZE:,}<span class="unit">건</span></div>
-                <div class="label">파일당 최대 건수</div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown("<div style='margin-top:16px;'></div>", unsafe_allow_html=True)
-
         if total_count > 0:
-            st.success(f"총 **{total_count:,}**개 상품이 추출되었습니다.")
-
             start_str = datetime.combine(start_dt, start_tm).strftime('%Y%m%d%H%M')
             end_str   = datetime.combine(end_dt,   end_tm).strftime('%Y%m%d%H%M')
 
@@ -713,55 +703,93 @@ if extract_btn:
                 '요일/시간 할인율': "",
             }).reset_index(drop=True)
 
-            # ── 상품번호 확인용 데이터프레임 (업로드용과 동일한 순서) ──
             df_ref = df_f[['상품번호', '브랜드명', '상품명', '마진율']].reset_index(drop=True)
 
-            st.markdown(f"""
-            <div class="dl-header">
-                <div class="dl-header-title">분할 파일 다운로드</div>
-                <div class="dl-header-badge">{num_chunks} FILES</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            cols = st.columns(4)
+            # 모든 청크를 미리 엑셀 바이트로 변환해서 session_state에 저장
+            chunks_upload = []
+            chunks_ref    = []
             for idx in range(num_chunks):
-                start_idx = idx * CHUNK_SIZE
-                end_idx   = min(start_idx + CHUNK_SIZE, total_count)
-                if start_idx >= total_count:
-                    break
+                s = idx * CHUNK_SIZE
+                e = min(s + CHUNK_SIZE, total_count)
 
-                chunk_upload = df_upload.iloc[start_idx:end_idx]
-                chunk_ref    = df_ref.iloc[start_idx:end_idx]
+                buf_u = io.BytesIO()
+                with pd.ExcelWriter(buf_u, engine='openpyxl') as w:
+                    df_upload.iloc[s:e].to_excel(w, index=False)
+                chunks_upload.append((s, e, buf_u.getvalue()))
 
-                # 업로드용 엑셀
-                output_upload = io.BytesIO()
-                with pd.ExcelWriter(output_upload, engine='openpyxl') as writer:
-                    chunk_upload.to_excel(writer, index=False)
+                buf_r = io.BytesIO()
+                with pd.ExcelWriter(buf_r, engine='openpyxl') as w:
+                    df_ref.iloc[s:e].to_excel(w, index=False)
+                chunks_ref.append((s, e, buf_r.getvalue()))
 
-                # 상품번호 확인용 엑셀
-                output_ref = io.BytesIO()
-                with pd.ExcelWriter(output_ref, engine='openpyxl') as writer:
-                    chunk_ref.to_excel(writer, index=False)
-
-                col_idx = idx % 4
-                with cols[col_idx]:
-                    st.caption(f"Part {idx+1}  ·  {start_idx+1:,}–{end_idx:,}")
-                    st.download_button(
-                        label=f"📤 업로드용",
-                        data=output_upload.getvalue(),
-                        file_name=f"coupon_upload_part{idx+1}_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"btn_upload_{idx}",
-                    )
-                    st.download_button(
-                        label=f"🔍 상품번호 확인용",
-                        data=output_ref.getvalue(),
-                        file_name=f"coupon_ref_part{idx+1}_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"btn_ref_{idx}",
-                    )
+            st.session_state['chunks_upload'] = chunks_upload
+            st.session_state['chunks_ref']    = chunks_ref
+            st.session_state['total_count']   = total_count
+            st.session_state['num_chunks']    = num_chunks
+            st.session_state['date_label']    = datetime.now().strftime('%Y%m%d')
+            st.session_state['result_ready']  = True
         else:
+            st.session_state['result_ready'] = False
             st.warning("선택한 조건에 해당하는 상품이 없습니다. 필터 조건을 조정해보세요.")
+
+# ─── 결과 렌더링 (session_state 기반 — 다운로드 후 rerun에도 유지됨) ──────────
+if st.session_state.get('result_ready'):
+    total_count = st.session_state['total_count']
+    num_chunks  = st.session_state['num_chunks']
+    date_label  = st.session_state['date_label']
+    chunks_upload = st.session_state['chunks_upload']
+    chunks_ref    = st.session_state['chunks_ref']
+
+    # ── 통계 카드 ──
+    st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="num">{total_count:,}<span class="unit">건</span></div>
+            <div class="label">추출된 상품 수</div>
+        </div>""", unsafe_allow_html=True)
+    with s2:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="num">{num_chunks}<span class="unit">개</span></div>
+            <div class="label">분할 파일 수</div>
+        </div>""", unsafe_allow_html=True)
+    with s3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="num">{CHUNK_SIZE:,}<span class="unit">건</span></div>
+            <div class="label">파일당 최대 건수</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:16px;'></div>", unsafe_allow_html=True)
+    st.success(f"총 **{total_count:,}**개 상품이 추출되었습니다.")
+
+    st.markdown(f"""
+    <div class="dl-header">
+        <div class="dl-header-title">분할 파일 다운로드</div>
+        <div class="dl-header-badge">{num_chunks} FILES</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    cols = st.columns(4)
+    for idx, ((s_u, e_u, data_u), (s_r, e_r, data_r)) in enumerate(zip(chunks_upload, chunks_ref)):
+        with cols[idx % 4]:
+            st.caption(f"Part {idx+1}  ·  {s_u+1:,}–{e_u:,}")
+            st.download_button(
+                label="📤 업로드용",
+                data=data_u,
+                file_name=f"coupon_upload_part{idx+1}_{date_label}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"btn_upload_{idx}",
+            )
+            st.download_button(
+                label="🔍 상품번호 확인용",
+                data=data_r,
+                file_name=f"coupon_ref_part{idx+1}_{date_label}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"btn_ref_{idx}",
+            )
 
 # ─── 푸터 ─────────────────────────────────────────────────────────────────────
 st.markdown("""
