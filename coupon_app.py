@@ -321,10 +321,13 @@ div[data-testid="stExpander"] summary {
 /* 멀티셀렉트 키보드 검색 입력 글자 흰색으로 명시 */
 [data-testid="stSidebar"] .stMultiSelect input,
 [data-testid="stSidebar"] .stMultiSelect [data-baseweb="input"] input,
-[data-testid="stSidebar"] .stMultiSelect [data-baseweb="select"] input {
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="select"] input,
+[data-testid="stSidebar"] .stMultiSelect input[aria-autocomplete="list"],
+[data-testid="stSidebar"] .stMultiSelect input[type="text"] {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     caret-color: #ffffff !important;
+    background-color: transparent !important;
 }
 /* 선택된 값 태그(chip): 골드 배경 + 진한 글자로 확실히 구분 */
 [data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] {
