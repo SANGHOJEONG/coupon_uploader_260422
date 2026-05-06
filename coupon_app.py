@@ -555,7 +555,7 @@ st.markdown("""
 st.info("좌측 필터에서 조건을 설정한 뒤, 하단의 엑셀 파일 추출 버튼을 눌러주세요.")
 
 # ─── 데이터 로드 ──────────────────────────────────────────────────────────────
-DEFAULT_FILE = "product_dummy_data_30k.csv"
+DEFAULT_FILE = "dummy_100k.csv"
 
 @st.cache_data
 def load_data(file_path_or_buffer):
@@ -582,25 +582,21 @@ with st.sidebar:
 
     if df_raw is not None:
         st.markdown('<p class="sb-section-label">상품 필터</p>', unsafe_allow_html=True)
-        sel_store    = st.multiselect("점포 (상위거래처)",  sorted(df_raw['상위거래처'].unique()))
-        sel_md_group = st.multiselect("상위 MD 상품군",    sorted(df_raw['상위MD상품군명'].unique()))
-        sel_md       = st.multiselect("백화점 MD",         sorted(df_raw['백화점MD'].unique()))
-        sel_brand    = st.multiselect("브랜드명",           sorted(df_raw['브랜드명'].unique()))
+        sel_store        = st.multiselect("점포",           sorted(df_raw['점포'].dropna().unique()))
+        sel_md_group     = st.multiselect("상위 MD 상품군", sorted(df_raw['상위MD상품군명'].dropna().unique()))
+        sel_sub_md_group = st.multiselect("하위 MD 상품군", sorted(df_raw['하위MD상품군명'].dropna().unique()))
+        sel_md           = st.multiselect("담당 MD",        sorted(df_raw['담당MD_명'].dropna().unique()))
+        sel_brand        = st.multiselect("브랜드명",        sorted(df_raw['브랜드명'].dropna().unique()))
 
         st.markdown("---")
         st.markdown('<p class="sb-section-label">마진율 필터</p>', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1: sel_min_margin = st.number_input("이상", min_value=0, max_value=100, value=None, step=1)
         with c2: sel_max_margin = st.number_input("이하", min_value=0, max_value=100, value=None, step=1)
-
-        st.markdown("---")
-        st.markdown('<p class="sb-section-label">상품 상태</p>', unsafe_allow_html=True)
-        status_option = st.radio("", ("전체", "전시", "미전시"), horizontal=True)
     else:
-        st.warning("`product_dummy_data_30k.csv` 파일을 찾을 수 없습니다.")
-        sel_store = sel_md_group = sel_md = sel_brand = []
-        sel_min_margin, sel_max_margin = 10, 40
-        status_option = "전체"
+        st.warning("`dummy_100k.csv` 파일을 찾을 수 없습니다.")
+        sel_store = sel_md_group = sel_sub_md_group = sel_md = sel_brand = []
+        sel_min_margin, sel_max_margin = None, None
 
 # ─── 섹션 1: 기본 발행 정책 ──────────────────────────────────────────────────
 st.markdown('<div class="ld-section"><div class="ld-section-title">기본 발행 정책</div>', unsafe_allow_html=True)
@@ -656,11 +652,11 @@ if extract_btn:
         st.error("데이터 파일을 찾을 수 없습니다. CSV 파일을 확인해주세요.")
     else:
         df_f = df_raw.copy()
-        if sel_store:    df_f = df_f[df_f['상위거래처'].isin(sel_store)]
-        if sel_md_group: df_f = df_f[df_f['상위MD상품군명'].isin(sel_md_group)]
-        if sel_md:       df_f = df_f[df_f['백화점MD'].isin(sel_md)]
-        if sel_brand:    df_f = df_f[df_f['브랜드명'].isin(sel_brand)]
-        if status_option != "전체": df_f = df_f[df_f['상품상태'] == status_option]
+        if sel_store:        df_f = df_f[df_f['점포'].isin(sel_store)]
+        if sel_md_group:     df_f = df_f[df_f['상위MD상품군명'].isin(sel_md_group)]
+        if sel_sub_md_group: df_f = df_f[df_f['하위MD상품군명'].isin(sel_sub_md_group)]
+        if sel_md:           df_f = df_f[df_f['담당MD_명'].isin(sel_md)]
+        if sel_brand:        df_f = df_f[df_f['브랜드명'].isin(sel_brand)]
                 
         if sel_min_margin is not None:
             df_f = df_f[df_f['마진율'] >= sel_min_margin]
@@ -715,7 +711,10 @@ if extract_btn:
                 '시작시간':         '0000',
                 '종료시간':         '2359',
                 '요일/시간 할인율': "",
-            })
+            }).reset_index(drop=True)
+
+            # ── 상품번호 확인용 데이터프레임 (업로드용과 동일한 순서) ──
+            df_ref = df_f[['상품번호', '브랜드명', '상품명', '마진율']].reset_index(drop=True)
 
             st.markdown(f"""
             <div class="dl-header">
@@ -731,18 +730,35 @@ if extract_btn:
                 if start_idx >= total_count:
                     break
 
-                chunk_df = df_upload.iloc[start_idx:end_idx]
-                output   = io.BytesIO()
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    chunk_df.to_excel(writer, index=False)
+                chunk_upload = df_upload.iloc[start_idx:end_idx]
+                chunk_ref    = df_ref.iloc[start_idx:end_idx]
 
-                with cols[idx % 4]:
+                # 업로드용 엑셀
+                output_upload = io.BytesIO()
+                with pd.ExcelWriter(output_upload, engine='openpyxl') as writer:
+                    chunk_upload.to_excel(writer, index=False)
+
+                # 상품번호 확인용 엑셀
+                output_ref = io.BytesIO()
+                with pd.ExcelWriter(output_ref, engine='openpyxl') as writer:
+                    chunk_ref.to_excel(writer, index=False)
+
+                col_idx = idx % 4
+                with cols[col_idx]:
+                    st.caption(f"Part {idx+1}  ·  {start_idx+1:,}–{end_idx:,}")
                     st.download_button(
-                        label=f"Part {idx+1}  ·  {start_idx+1:,}–{end_idx:,}",
-                        data=output.getvalue(),
-                        file_name=f"coupon_part{idx+1}_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        label=f"📤 업로드용",
+                        data=output_upload.getvalue(),
+                        file_name=f"coupon_upload_part{idx+1}_{datetime.now().strftime('%Y%m%d')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"btn_{idx}",
+                        key=f"btn_upload_{idx}",
+                    )
+                    st.download_button(
+                        label=f"🔍 상품번호 확인용",
+                        data=output_ref.getvalue(),
+                        file_name=f"coupon_ref_part{idx+1}_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key=f"btn_ref_{idx}",
                     )
         else:
             st.warning("선택한 조건에 해당하는 상품이 없습니다. 필터 조건을 조정해보세요.")
