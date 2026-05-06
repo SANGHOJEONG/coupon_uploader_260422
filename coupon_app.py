@@ -326,6 +326,26 @@ div[data-testid="stExpander"] summary {
     -webkit-text-fill-color: #ffffff !important;
     caret-color: #ffffff !important;
 }
+/* 선택된 값 태그(chip): 골드 배경 + 진한 글자로 확실히 구분 */
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] {
+    background-color: #b8965a !important;
+    border: none !important;
+}
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] span,
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] [data-testid="stMultiSelectChipText"] {
+    color: #1a1a2e !important;
+    -webkit-text-fill-color: #1a1a2e !important;
+    font-weight: 600 !important;
+}
+/* 태그 삭제(X) 버튼 */
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] button,
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] [role="button"] {
+    color: #1a1a2e !important;
+    opacity: 0.7;
+}
+[data-testid="stSidebar"] .stMultiSelect [data-baseweb="tag"] button:hover {
+    opacity: 1;
+}
 /* 드롭다운 옵션 목록: 어두운 배경에 흰 글자 */
 [data-testid="stSidebar"] [data-baseweb="popover"] ul,
 [data-testid="stSidebar"] [data-baseweb="menu"] {
